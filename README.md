@@ -544,7 +544,7 @@ public class ShiroConfig {
 }
 ```
 
-里面URL规则自己参考文档即可 http://shiro.apache.org/web.html#Web-%7B%7B%5Curls%5C%7D%7D。
+里面URL规则自己参考文档即可http://shiro.apache.org/web.html 。
 
 ### 总结
 
