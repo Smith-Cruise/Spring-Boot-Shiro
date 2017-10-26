@@ -4,24 +4,25 @@
 
 我也是半路出家的人，如果大家有什么好的意见或批评，请务必`issue`下。
 
-项目地址：https://github.com/Smith-Cruise/shiro-study
+项目地址：https://github.com/Smith-Cruise/shiro-study 。
 
-如果想要体验下，从[release](https://github.com/Smith-Cruise/shiro-study/releases)处下载运行`java -jar shiro-study-1.0-SNAPSHOT.jar `即可。网址规则自行看教程后面。
+如果想要体验下，从 [release](https://github.com/Smith-Cruise/shiro-study/releases) 处下载运行`java -jar shiro-study-1.0-SNAPSHOT.jar `即可。网址规则自行看教程后面。
 
 ### 准备工作
 
 在开始本教程之前，请保证已经熟悉以下几点。
 
-- Spring Boot 基本语法，至少要懂得`Controller`、`RestController`、`Autowired`等这些基本注释。看看官方的Getting-Start教程就差不多了。
+- Spring Boot 基本语法，至少要懂得`Controller`、`RestController`、`Autowired`等这些基本注释。其实看看官方的Getting-Start教程就差不多了。
 - [JWT](https://jwt.io/) （Json Web Token）的基本概念，并且会简单操作JWT的 [JAVA SDK](https://github.com/auth0/java-jwt)。
 - Shiro的基本操作，看下官方的 [10 Minute Tutorial](http://shiro.apache.org/10-minute-tutorial.html) 即可。
+- 模拟HTTP请求工具，我使用的是PostMan。
 
 简要的说明下我们为什么要用JWT，因为我们要实现完全的前后端分离，所以不可能使用`session`，`cookie`的方式进行鉴权，所以JWT就被派上了用场，你可以通过一个加密密钥来进行前后端的鉴权。
 
-### 程序逻辑介绍
+### 程序逻辑
 
-1. 用户POST用户名与密码到`/login`进行登入，如果成功返回一个加密token，失败的话直接返回401错误。
-2. 之后用户访问每一个需要权限的操作请求必须在`header`中添加`Authorization`字段，例如`Authorization: username token`，`username`为用户名，`token`为密钥，注意两者之间有一个空格。
+1. 我们POST用户名与密码到`/login`进行登入，如果成功返回一个加密token，失败的话直接返回401错误。
+2. 之后用户访问每一个需要权限的网址请求必须在`header`中添加`Authorization`字段，例如`Authorization: username token`，`username`为用户名，`token`为密钥，注意两者之间有一个空格。
 3. 后台会进行`token`的校验，如果有误会直接返回401。
 
 ### 准备Maven文件
@@ -99,9 +100,9 @@
 | smith    | smith123 | user  | view       |
 | danny    | danny123 | admin | view,edit  |
 
-这是一个最简单的用户权限实现，如果想更加进一步了解，自行百度RABC。
+这是一个最简单的用户权限表，如果想更加进一步了解，自行百度RABC。
 
-之后再构建一个service来模拟数据库查询，并且把结果放到`UserBean`之中。
+之后再构建一个`Service`来模拟数据库查询，并且把结果放到`UserBean`之中。
 
 ###### Service.java
 
@@ -126,9 +127,55 @@ public class Service {
 }
 ```
 
+###### UserBean.java
+
+```java
+public class UserBean {
+    private String username;
+
+    private String password;
+
+    private String role;
+
+    private String permission;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getPermission() {
+        return permission;
+    }
+
+    public void setPermission(String permission) {
+        this.permission = permission;
+    }
+}
+```
+
 ### 配置JWT
 
-我们写一个简单的JWT加密，校验工具，并且使用用户自己的密码充当加密密钥，这样保证了token被他人截获也无法破解。并且我们在`token`中附带了`username`信息，用于和`Authorization`中的`username`进行对比。
+我们写一个简单的JWT加密，校验工具，并且使用用户自己的密码充当加密密钥，这样保证了token 即使被他人截获也无法破解。并且我们在`token`中附带了`username`信息，用于和`Authorization`中的`username`进行对比。
 
 ```java
 public class JWTUtil {
@@ -176,7 +223,7 @@ public class JWTUtil {
 
 ### 构建URL
 
-###### ResponseBean
+###### ResponseBean.java
 
 既然想要实现restful，那我们要保证每次返回的格式都是相同的，因此我建立了一个`ResponseBean`来统一返回的格式。
 
@@ -226,7 +273,7 @@ public class ResponseBean {
 
 ###### 自定义异常
 
-为了实现我自己能够手动抛出异常，我自己写了一个`UnauthorizedException`
+为了实现我自己能够手动抛出异常，我自己写了一个`UnauthorizedException.java`
 
 ```java
 public class UnauthorizedException extends RuntimeException {
@@ -497,13 +544,12 @@ public class ShiroConfig {
 }
 ```
 
-里面URL规则自己参考文档即可 http://shiro.apache.org/web.html#urls-。
+里面URL规则自己参考文档即可 http://shiro.apache.org/web.html#Web-%7B%7B%5Curls%5C%7D%7D。
 
 ### 总结
 
 我就说下代码还有哪些缺点吧
 
-- `RestControllerAdvice`只能够处理`RestController`中的异常，而不能处理`Intercept`中的异常，导致访问不存在的网址时返回的值还是`Spring Boot`自己的格式。
+- `RestControllerAdvice`只能够处理`RestController`中的异常，而不能处理`Intercept`中的异常，导致访问不存在的网址时返回的json还是`Spring Boot`自己的格式。
 - 没有实现Shiro的`Cache`功能。
 - Shiro中鉴权失败时不能够直接返回401信息，而是通过跳转到`/401`地址实现。
-- ​
