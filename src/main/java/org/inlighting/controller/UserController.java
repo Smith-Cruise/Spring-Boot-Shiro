@@ -23,7 +23,7 @@ public class UserController {
         this.service = service;
     }
 
-    @GetMapping("/login")
+    @PostMapping("/login")
     public ResponseBean login(@RequestParam("username") String username,
                               @RequestParam("password") String password) {
         UserBean userBean = service.getUser(username);
@@ -44,11 +44,9 @@ public class UserController {
         return new ResponseBean(200, "You are visiting admin content", null);
     }
 
-
     @RequestMapping(path = "/401")
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ResponseBean unauthorized() {
         return new ResponseBean(401, "Unauthorized", null);
     }
-
 }

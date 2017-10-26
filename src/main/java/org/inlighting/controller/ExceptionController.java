@@ -1,20 +1,15 @@
 package org.inlighting.controller;
 
 import org.inlighting.bean.ResponseBean;
-import org.inlighting.exception.ErrorException;
 import org.inlighting.exception.UnauthorizedException;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-@ControllerAdvice(annotations = RestController.class)
-@RestController
+@RestControllerAdvice
 public class ExceptionController {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(ErrorException.class)
+    @ExceptionHandler(Exception.class)
     public ResponseBean handle400() {
         return new ResponseBean(400, "Error", null);
     }
