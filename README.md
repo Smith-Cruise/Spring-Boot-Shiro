@@ -496,6 +496,8 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
 ###### 配置Shiro
 
 ```java
+public class ShiroConfig {
+
     @Bean("securityManager")
     public DefaultWebSecurityManager getManager() {
         DefaultWebSecurityManager manager = new DefaultWebSecurityManager();
@@ -560,6 +562,7 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
         advisor.setSecurityManager(securityManager);
         return advisor;
     }
+}
 ```
 
 里面URL规则自己参考文档即可http://shiro.apache.org/web.html 。
