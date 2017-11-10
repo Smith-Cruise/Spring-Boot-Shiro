@@ -2,6 +2,7 @@ package org.inlighting.controller;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.shiro.authz.annotation.*;
 import org.inlighting.bean.ResponseBean;
 import org.inlighting.database.Service;
 import org.inlighting.database.UserBean;
@@ -43,6 +44,25 @@ public class UserController {
     public ResponseBean adminView() {
         return new ResponseBean(200, "You are visiting admin content", null);
     }
+
+    @GetMapping("/annotation/require_auth")
+    @RequiresAuthentication
+    public ResponseBean annotationView1() {
+        return new ResponseBean(200, "You are visiting require_auth", null);
+    }
+
+    @GetMapping("/annotation/require_role")
+    @RequiresRoles("admin")
+    public ResponseBean annotationView2() {
+        return new ResponseBean(200, "You are visiting require_role", null);
+    }
+
+    @GetMapping("/annotation/require_permission")
+    @RequiresPermissions(logical = Logical.AND, value = {"view", "edit"})
+    public ResponseBean annotationView3() {
+        return new ResponseBean(200, "You are visiting permission require edit,view", null);
+    }
+
 
     @RequestMapping(path = "/401")
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
