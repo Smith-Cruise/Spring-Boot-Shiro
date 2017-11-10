@@ -496,16 +496,13 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
 ###### 配置Shiro
 
 ```java
-@Configuration
-public class ShiroConfig {
-
     @Bean("securityManager")
     public DefaultWebSecurityManager getManager() {
         DefaultWebSecurityManager manager = new DefaultWebSecurityManager();
         // 使用自己的realm
         manager.setRealm(new MyRealm());
 
-        /**
+        /*
          * 关闭shiro自带的session，详情见文档
          * http://shiro.apache.org/session-management.html#SessionManagement-StatelessApplications%28Sessionless%29
          */
@@ -530,18 +527,39 @@ public class ShiroConfig {
         factoryBean.setSecurityManager(securityManager);
         factoryBean.setUnauthorizedUrl("/401");
 
-        /**
+        /*
          * 自定义url规则
          * http://shiro.apache.org/web.html#urls-
          */
         Map<String, String> filterRuleMap = new HashMap<>();
         filterRuleMap.put("/edit", "jwt, perms[edit]");
         filterRuleMap.put("/admin/**", "jwt, roles[admin]");
+        filterRuleMap.put("/annotation/**", "jwt");
         filterRuleMap.put("/**", "anon");
         factoryBean.setFilterChainDefinitionMap(filterRuleMap);
         return factoryBean;
     }
-}
+
+    /**
+     * 下面的代码是添加注解支持
+     */
+    @Bean
+    @DependsOn("lifecycleBeanPostProcessor")
+    public DefaultAdvisorAutoProxyCreator defaultAdvisorAutoProxyCreator() {
+        return new DefaultAdvisorAutoProxyCreator();
+    }
+
+    @Bean
+    public LifecycleBeanPostProcessor lifecycleBeanPostProcessor() {
+        return new LifecycleBeanPostProcessor();
+    }
+
+    @Bean
+    public AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor(DefaultWebSecurityManager securityManager) {
+        AuthorizationAttributeSourceAdvisor advisor = new AuthorizationAttributeSourceAdvisor();
+        advisor.setSecurityManager(securityManager);
+        return advisor;
+    }
 ```
 
 里面URL规则自己参考文档即可http://shiro.apache.org/web.html 。
