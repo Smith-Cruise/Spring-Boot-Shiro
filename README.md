@@ -26,6 +26,18 @@
 2. 之后用户访问每一个需要权限的网址请求必须在`header`中添加`Authorization`字段，例如`Authorization: token`，`token`为密钥。
 3. 后台会进行`token`的校验，如果有误会直接返回401。
 
+### Token加密说明
+
+- 携带了`username`信息在token中。
+- 设定了过期时间。
+- 使用用户登入密码对`token`进行加密。
+
+### Token校验流程
+
+1. 获得`token`中携带的`username`信息。
+2. 进入数据库搜索这个用户，得到他的密码。
+3. 使用用户的密码来检验`token`是否正确。
+
 ### 准备Maven文件
 
 新建一个Maven工程，添加相关的dependencies。
@@ -348,6 +360,25 @@ public class UserController {
     public ResponseBean adminView() {
         return new ResponseBean(200, "You are visiting admin content", null);
     }
+
+    @GetMapping("/annotation/require_auth")
+    @RequiresAuthentication
+    public ResponseBean annotationView1() {
+        return new ResponseBean(200, "You are visiting require_auth", null);
+    }
+
+    @GetMapping("/annotation/require_role")
+    @RequiresRoles("admin")
+    public ResponseBean annotationView2() {
+        return new ResponseBean(200, "You are visiting require_role", null);
+    }
+
+    @GetMapping("/annotation/require_permission")
+    @RequiresPermissions(logical = Logical.AND, value = {"view", "edit"})
+    public ResponseBean annotationView3() {
+        return new ResponseBean(200, "You are visiting permission require edit,view", null);
+    }
+
 
     @RequestMapping(path = "/401")
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
