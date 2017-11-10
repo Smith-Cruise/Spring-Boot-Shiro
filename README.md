@@ -1,4 +1,5 @@
 # Shiro+JWT+Spring Boot Restful简易教程
+> 之前有一个写过一个老版本教程，如果需要查看请前往`old`分支。本次教程添加了注解支持，完善了JWT的机制，并且添加过期时间的校验等。
 
 ### 序言
 
@@ -6,7 +7,7 @@
 
 项目地址：https://github.com/Smith-Cruise/Spring-Boot-Shiro 。
 
-如果想要体验下，从 [release](https://github.com/Smith-Cruise/Spring-Boot-Shiro/releases) 处下载运行`java -jar shiro-study-1.0-SNAPSHOT.jar `即可。网址规则自行看教程后面。
+如果想要体验下，从 [release](https://github.com/Smith-Cruise/Spring-Boot-Shiro/releases) 处下载运行`java -jar file_name.jar `即可。网址规则自行看教程后面。
 
 ### 准备工作
 
@@ -22,7 +23,7 @@
 ### 程序逻辑
 
 1. 我们POST用户名与密码到`/login`进行登入，如果成功返回一个加密token，失败的话直接返回401错误。
-2. 之后用户访问每一个需要权限的网址请求必须在`header`中添加`Authorization`字段，例如`Authorization: username token`，`username`为用户名，`token`为密钥，注意两者之间有一个空格。
+2. 之后用户访问每一个需要权限的网址请求必须在`header`中添加`Authorization`字段，例如`Authorization: token`，`token`为密钥。
 3. 后台会进行`token`的校验，如果有误会直接返回401。
 
 ### 准备Maven文件
@@ -175,15 +176,17 @@ public class UserBean {
 
 ### 配置JWT
 
-我们写一个简单的JWT加密，校验工具，并且使用用户自己的密码充当加密密钥，这样保证了token 即使被他人截获也无法破解。并且我们在`token`中附带了`username`信息，用于和`Authorization`中的`username`进行对比。
+我们写一个简单的JWT加密，校验工具，并且使用用户自己的密码充当加密密钥，这样保证了token 即使被他人截获也无法破解。并且我们在`token`中附带了`username`信息，并且设置密钥5分钟就会过期。
 
 ```java
 public class JWTUtil {
 
+    // 过期时间5分钟
+    private static final long EXPIRE_TIME = 5*60*1000;
+
     /**
      * 校验token是否正确
      * @param token 密钥
-     * @param username 用户名
      * @param secret 用户的密码
      * @return 是否正确
      */
@@ -201,19 +204,33 @@ public class JWTUtil {
     }
 
     /**
-     * 生成签名
+     * 获得token中的信息无需secret解密也能获得
+     * @return token中包含的用户名
+     */
+    public static String getUsername(String token) {
+        try {
+            DecodedJWT jwt = JWT.decode(token);
+            return jwt.getClaim("username").asString();
+        } catch (JWTDecodeException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 生成签名,5min后过期
      * @param username 用户名
      * @param secret 用户的密码
      * @return 加密的token
      */
     public static String sign(String username, String secret) {
         try {
+            Date date = new Date(System.currentTimeMillis()+EXPIRE_TIME);
             Algorithm algorithm = Algorithm.HMAC256(secret);
             // 附带username信息
-            String token = JWT.create()
+            return JWT.create()
                     .withClaim("username", username)
+                    .withExpiresAt(date)
                     .sign(algorithm);
-            return token;
         } catch (UnsupportedEncodingException e) {
             return null;
         }
@@ -348,19 +365,35 @@ public class UserController {
 @RestControllerAdvice
 public class ExceptionController {
 
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(Exception.class)
-    public ResponseBean handle400() {
-        return new ResponseBean(400, "Error", null);
+    // 捕捉shiro的异常
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(ShiroException.class)
+    public ResponseBean handle401(ShiroException e) {
+        return new ResponseBean(401, e.getMessage(), null);
     }
 
+    // 捕捉UnauthorizedException
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseBean handle401() {
         return new ResponseBean(401, "Unauthorized", null);
     }
-}
 
+    // 捕捉其他所有异常
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseBean globalException(HttpServletRequest request, Throwable ex) {
+        return new ResponseBean(getStatus(request).value(), ex.getMessage(), null);
+    }
+
+    private HttpStatus getStatus(HttpServletRequest request) {
+        Integer statusCode = (Integer) request.getAttribute("javax.servlet.error.status_code");
+        if (statusCode == null) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return HttpStatus.valueOf(statusCode);
+    }
+}
 
 ```
 
@@ -370,25 +403,21 @@ public class ExceptionController {
 
 ###### 实现JWTToken
 
-`JWTToken`差不多就是`Shiro`用户名密码的载体。因为我们是前后端分离，服务器无需保存用户状态，所以不需要`RememberMe`这类功能，我们简单的实现下`AuthenticationToken`接口即可。如果你喜欢钻研，可以看看官方的`UsernamePasswordToken`是如何实现的。
+`JWTToken`差不多就是`Shiro`用户名密码的载体。因为我们是前后端分离，服务器无需保存用户状态，所以不需要`RememberMe`这类功能，我们简单的实现下`AuthenticationToken`接口即可。因为`token`自己已经包含了用户名等信息，所以这里我就弄了一个字段。如果你喜欢钻研，可以看看官方的`UsernamePasswordToken`是如何实现的。
 
 ```java
 public class JWTToken implements AuthenticationToken {
 
-    // 用户名
-    private String username;
-
     // 密钥
     private String token;
 
-    public JWTToken(String username, String token) {
-        this.username = username;
+    public JWTToken(String token) {
         this.token = token;
     }
 
     @Override
     public Object getPrincipal() {
-        return username;
+        return token;
     }
 
     @Override
@@ -426,7 +455,7 @@ public class MyRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
-        String username = principals.toString();
+        String username = JWTUtil.getUsername(principals.toString());
         UserBean user = service.getUser(username);
         SimpleAuthorizationInfo simpleAuthorizationInfo = new SimpleAuthorizationInfo();
         simpleAuthorizationInfo.addRole(user.getRole());
@@ -439,13 +468,24 @@ public class MyRealm extends AuthorizingRealm {
      * 默认使用此方法进行用户名正确与否验证，错误抛出异常即可。
      */
     @Override
-    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
-        String username = (String) token.getPrincipal();
-        UserBean user = service.getUser(username);
-        if (user == null) {
-            throw new AuthenticationException("username or password error");
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken auth) throws AuthenticationException {
+        String token = (String) auth.getCredentials();
+        // 解密获得username，用于和数据库进行对比
+        String username = JWTUtil.getUsername(token);
+        if (username == null) {
+            throw new AuthenticationException("token invalid");
         }
-        return new SimpleAuthenticationInfo(user.getUsername(), JWTUtil.sign(username, user.getPassword()), "my_realm");
+
+        UserBean userBean = service.getUser(username);
+        if (userBean == null) {
+            throw new AuthenticationException("User didn't existed!");
+        }
+
+        if (! JWTUtil.verify(token, username, userBean.getPassword())) {
+            throw new AuthenticationException("Username or password error");
+        }
+
+        return new SimpleAuthenticationInfo(token, token, "my_realm");
     }
 }
 ```
@@ -465,9 +505,8 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
         // 获取Authorization字段
         String authorization = httpServletRequest.getHeader("Authorization");
         if (authorization!=null) {
-            String[] array = authorization.split(" ");
             try {
-                JWTToken token = new JWTToken(array[0], array[1]);
+                JWTToken token = new JWTToken(authorization);
                 // 提交给realm进行登入，如果错误他会抛出异常并被捕获
                 getSubject(request, response).login(token);
                 return true;
@@ -496,6 +535,7 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
 ###### 配置Shiro
 
 ```java
+@Configuration
 public class ShiroConfig {
 
     @Bean("securityManager")
@@ -569,8 +609,7 @@ public class ShiroConfig {
 
 ### 总结
 
-我就说下代码还有哪些缺点吧
+我就说下代码还有哪些可以进步的地方吧
 
-- `RestControllerAdvice`只能够处理`RestController`中的异常，而不能处理`Intercept`中的异常，导致访问不存在的网址时返回的json还是`Spring Boot`自己的格式。
 - 没有实现Shiro的`Cache`功能。
 - Shiro中鉴权失败时不能够直接返回401信息，而是通过跳转到`/401`地址实现。

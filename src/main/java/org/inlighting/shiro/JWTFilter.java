@@ -15,9 +15,8 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
         // 获取Authorization字段
         String authorization = httpServletRequest.getHeader("Authorization");
         if (authorization!=null) {
-            String[] array = authorization.split(" ");
             try {
-                JWTToken token = new JWTToken(array[0], array[1]);
+                JWTToken token = new JWTToken(authorization);
                 // 提交给realm进行登入，如果错误他会抛出异常并被捕获
                 getSubject(request, response).login(token);
                 return true;
