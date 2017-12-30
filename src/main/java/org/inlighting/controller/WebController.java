@@ -2,7 +2,9 @@ package org.inlighting.controller;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.*;
+import org.apache.shiro.subject.Subject;
 import org.inlighting.bean.ResponseBean;
 import org.inlighting.database.Service;
 import org.inlighting.database.UserBean;
@@ -13,9 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-public class UserController {
+public class WebController {
 
-    private static final Logger LOGGER = LogManager.getLogger(UserController.class);
+    private static final Logger LOGGER = LogManager.getLogger(WebController.class);
 
     private Service service;
 
@@ -35,34 +37,33 @@ public class UserController {
         }
     }
 
-    @GetMapping("/edit")
-    public ResponseBean edit() {
-        return new ResponseBean(200, "You are editing now", null);
+    @GetMapping("/article")
+    public ResponseBean article() {
+        Subject subject = SecurityUtils.getSubject();
+        if (subject.isAuthenticated()) {
+            return new ResponseBean(200, "You are already logged in", null);
+        } else {
+            return new ResponseBean(200, "You are guest", null);
+        }
     }
 
-    @GetMapping("/admin/hello")
-    public ResponseBean adminView() {
-        return new ResponseBean(200, "You are visiting admin content", null);
-    }
-
-    @GetMapping("/annotation/require_auth")
+    @GetMapping("/require_auth")
     @RequiresAuthentication
-    public ResponseBean annotationView1() {
-        return new ResponseBean(200, "You are visiting require_auth", null);
+    public ResponseBean requireAuth() {
+        return new ResponseBean(200, "You are authenticated", null);
     }
 
-    @GetMapping("/annotation/require_role")
+    @GetMapping("/require_role")
     @RequiresRoles("admin")
-    public ResponseBean annotationView2() {
+    public ResponseBean requireRole() {
         return new ResponseBean(200, "You are visiting require_role", null);
     }
 
-    @GetMapping("/annotation/require_permission")
+    @GetMapping("/require_permission")
     @RequiresPermissions(logical = Logical.AND, value = {"view", "edit"})
-    public ResponseBean annotationView3() {
+    public ResponseBean requirePermission() {
         return new ResponseBean(200, "You are visiting permission require edit,view", null);
     }
-
 
     @RequestMapping(path = "/401")
     @ResponseStatus(HttpStatus.UNAUTHORIZED)

@@ -1,5 +1,4 @@
 # Shiro+JWT+Spring Boot Restful简易教程
-> 之前有一个写过一个老版本教程，如果需要查看请前往`old`分支。本次教程添加了注解支持，完善了JWT的机制，并且添加过期时间的校验等。
 
 ### 序言
 
@@ -7,7 +6,14 @@
 
 项目地址：https://github.com/Smith-Cruise/Spring-Boot-Shiro 。
 
-如果想要体验下，从 [release](https://github.com/Smith-Cruise/Spring-Boot-Shiro/releases) 处下载运行`java -jar file_name.jar `即可。网址规则自行看教程后面。
+如果想要直接体验，直接`clone`项目，运行`mvn spring-boot:run`命令即可进行访问。网址规则自行看教程后面。
+
+### 特性
+
+* 完全使用了Shiro的注解配置，保持高度的灵活性。
+* 放弃Cookie,Session,使用JWT进行鉴权，完全实现无状态鉴权。
+* JWT密钥支持过期时间。
+* 对跨域提供支持
 
 ### 准备工作
 
@@ -318,20 +324,21 @@ public class UnauthorizedException extends RuntimeException {
 
 ###### URL结构
 
-| URL          | 作用            |
-| ------------ | ------------- |
-| /login       | 登入            |
-| /edit        | 拥有edit权限的才能访问 |
-| /admin/hello | admin角色用户才能访问 |
-| /401         | 用于显示401       |
+| URL                 | 作用                      |
+| ------------------- | ----------------------- |
+| /login              | 登入                      |
+| /article            | 所有人都可以访问，但是用户与游客看到的内容不同 |
+| /require_auth       | 登入的用户才可以进行访问            |
+| /require_role       | admin的角色用户才可以登入         |
+| /require_permission | 拥有view和edit权限的用户才可以访问   |
 
 ###### Controller
 
 ```java
 @RestController
-public class UserController {
+public class WebController {
 
-    private static final Logger LOGGER = LogManager.getLogger(UserController.class);
+    private static final Logger LOGGER = LogManager.getLogger(WebController.class);
 
     private Service service;
 
@@ -351,34 +358,33 @@ public class UserController {
         }
     }
 
-    @GetMapping("/edit")
-    public ResponseBean edit() {
-        return new ResponseBean(200, "You are editing now", null);
+    @GetMapping("/article")
+    public ResponseBean article() {
+        Subject subject = SecurityUtils.getSubject();
+        if (subject.isAuthenticated()) {
+            return new ResponseBean(200, "You are already logged in", null);
+        } else {
+            return new ResponseBean(200, "You are guest", null);
+        }
     }
 
-    @GetMapping("/admin/hello")
-    public ResponseBean adminView() {
-        return new ResponseBean(200, "You are visiting admin content", null);
-    }
-
-    @GetMapping("/annotation/require_auth")
+    @GetMapping("/require_auth")
     @RequiresAuthentication
-    public ResponseBean annotationView1() {
-        return new ResponseBean(200, "You are visiting require_auth", null);
+    public ResponseBean requireAuth() {
+        return new ResponseBean(200, "You are authenticated", null);
     }
 
-    @GetMapping("/annotation/require_role")
+    @GetMapping("/require_role")
     @RequiresRoles("admin")
-    public ResponseBean annotationView2() {
+    public ResponseBean requireRole() {
         return new ResponseBean(200, "You are visiting require_role", null);
     }
 
-    @GetMapping("/annotation/require_permission")
+    @GetMapping("/require_permission")
     @RequiresPermissions(logical = Logical.AND, value = {"view", "edit"})
-    public ResponseBean annotationView3() {
+    public ResponseBean requirePermission() {
         return new ResponseBean(200, "You are visiting permission require edit,view", null);
     }
-
 
     @RequestMapping(path = "/401")
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
@@ -527,36 +533,88 @@ public class MyRealm extends AuthorizingRealm {
 
 所有的请求都会先经过`Filter`，所以我们继承官方的`BasicHttpAuthenticationFilter`，并且重写鉴权的方法。
 
+代码的执行流程`preHandle`->`isAccessAllowed`->`isLoginAttempt`->`executeLogin`
+
 ```java
 public class JWTFilter extends BasicHttpAuthenticationFilter {
 
+    private Logger LOGGER = LoggerFactory.getLogger(this.getClass());
+
+    /**
+     * 判断用户是否想要登入。
+     * 检测header里面是否包含Authorization字段即可
+     */
     @Override
-    protected boolean onAccessDenied(ServletRequest request, ServletResponse response) throws Exception {
-        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        // 获取Authorization字段
-        String authorization = httpServletRequest.getHeader("Authorization");
-        if (authorization!=null) {
-            try {
-                JWTToken token = new JWTToken(authorization);
-                // 提交给realm进行登入，如果错误他会抛出异常并被捕获
-                getSubject(request, response).login(token);
-                return true;
-            } catch (Exception e) {
-                response401(request, response);
-                return false;
-            }
-        } else {
-            response401(request, response);
-            return false;
-        }
+    protected boolean isLoginAttempt(ServletRequest request, ServletResponse response) {
+        HttpServletRequest req = (HttpServletRequest) request;
+        String authorization = req.getHeader("Authorization");
+        return authorization != null;
     }
 
     /**
-     * 将请求返回到 /401
+     *
      */
-    private void response401(ServletRequest req, ServletResponse resp) throws Exception {
-        HttpServletResponse httpServletResponse = (HttpServletResponse) resp;
-        httpServletResponse.sendRedirect("/401");
+    @Override
+    protected boolean executeLogin(ServletRequest request, ServletResponse response) throws Exception {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        String authorization = httpServletRequest.getHeader("Authorization");
+
+        JWTToken token = new JWTToken(authorization);
+        // 提交给realm进行登入，如果错误他会抛出异常并被捕获
+        getSubject(request, response).login(token);
+        // 如果没有抛出异常则代表登入成功，返回true
+        return true;
+    }
+
+    /**
+     * 这里我们详细说明下为什么最终返回的都是true，即允许访问
+     * 例如我们提供一个地址 GET /article
+     * 登入用户和游客看到的内容是不同的
+     * 如果在这里返回了false，请求会被直接拦截，用户看不到任何东西
+     * 所以我们在这里返回true，Controller中可以通过 subject.isAuthenticated() 来判断用户是否登入
+     * 如果有些资源只有登入用户才能访问，我们只需要在方法上面加上 @RequiresAuthentication 注解即可
+     * 但是这样做有一个缺点，就是不能够对GET,POST等请求进行分别过滤鉴权(因为我们重写了官方的方法)，但实际上对应用影响不大
+     */
+    @Override
+    protected boolean isAccessAllowed(ServletRequest request, ServletResponse response, Object mappedValue) {
+        if (isLoginAttempt(request, response)) {
+            try {
+                executeLogin(request, response);
+            } catch (Exception e) {
+                response401(request, response);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 对跨域提供支持
+     */
+    @Override
+    protected boolean preHandle(ServletRequest request, ServletResponse response) throws Exception {
+        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+        HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+        httpServletResponse.setHeader("Access-control-Allow-Origin", httpServletRequest.getHeader("Origin"));
+        httpServletResponse.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS,PUT,DELETE");
+        httpServletResponse.setHeader("Access-Control-Allow-Headers", httpServletRequest.getHeader("Access-Control-Request-Headers"));
+        // 跨域时会首先发送一个option请求，这里我们给option请求直接返回正常状态
+        if (httpServletRequest.getMethod().equals(RequestMethod.OPTIONS.name())) {
+            httpServletResponse.setStatus(HttpStatus.OK.value());
+            return false;
+        }
+        return super.preHandle(request, response);
+    }
+
+    /**
+     * 将非法请求跳转到 /401
+     */
+    private void response401(ServletRequest req, ServletResponse resp) {
+        try {
+            HttpServletResponse httpServletResponse = (HttpServletResponse) resp;
+            httpServletResponse.sendRedirect("/401");
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage());
+        }
     }
 }
 ```
@@ -605,10 +663,10 @@ public class ShiroConfig {
          * http://shiro.apache.org/web.html#urls-
          */
         Map<String, String> filterRuleMap = new HashMap<>();
-        filterRuleMap.put("/edit", "jwt, perms[edit]");
-        filterRuleMap.put("/admin/**", "jwt, roles[admin]");
-        filterRuleMap.put("/annotation/**", "jwt");
-        filterRuleMap.put("/**", "anon");
+        // 所有请求通过我们自己的JWT Filter
+        filterRuleMap.put("/**", "jwt");
+        // 访问401和404页面不通过我们的Filter
+        filterRuleMap.put("/401", "anon");
         factoryBean.setFilterChainDefinitionMap(filterRuleMap);
         return factoryBean;
     }
