@@ -119,7 +119,7 @@
 | smith    | smith123 | user  | view       |
 | danny    | danny123 | admin | view,edit  |
 
-这是一个最简单的用户权限表，如果想更加进一步了解，自行百度RABC。
+这是一个最简单的用户权限表，如果想更加进一步了解，自行百度RBAC。
 
 之后再构建一个`Service`来模拟数据库查询，并且把结果放到`UserBean`之中。
 
