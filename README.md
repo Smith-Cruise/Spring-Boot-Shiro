@@ -121,13 +121,13 @@
 
 这是一个最简单的用户权限表，如果想更加进一步了解，自行百度RBAC。
 
-之后再构建一个`Service`来模拟数据库查询，并且把结果放到`UserBean`之中。
+之后再构建一个`UserService`来模拟数据库查询，并且把结果放到`UserBean`之中。
 
-###### Service.java
+###### UserService.java
 
 ```java
 @Component
-public class Service {
+public class UserService {
 
     public UserBean getUser(String username) {
         // 没有此用户直接返回null
@@ -340,17 +340,17 @@ public class WebController {
 
     private static final Logger LOGGER = LogManager.getLogger(WebController.class);
 
-    private Service service;
+    private UserService userService;
 
     @Autowired
-    public void setService(Service service) {
-        this.service = service;
+    public void setService(UserService userService) {
+        this.userService = userService;
     }
 
     @PostMapping("/login")
     public ResponseBean login(@RequestParam("username") String username,
                               @RequestParam("password") String password) {
-        UserBean userBean = service.getUser(username);
+        UserBean userBean = userService.getUser(username);
         if (userBean.getPassword().equals(password)) {
             return new ResponseBean(200, "Login success", JWTUtil.sign(username, password));
         } else {
@@ -469,14 +469,16 @@ public class JWTToken implements AuthenticationToken {
 `realm`的用于处理用户是否合法的这一块，需要我们自己实现。
 
 ```java
+@Service
 public class MyRealm extends AuthorizingRealm {
 
     private static final Logger LOGGER = LogManager.getLogger(MyRealm.class);
 
-    private Service service;
+    private UserService userService;
 
-    MyRealm() {
-        service = new Service();
+    @Autowired
+    public void setUserService(UserService userService) {
+        this.userService = userService;
     }
 
     /**
@@ -493,7 +495,7 @@ public class MyRealm extends AuthorizingRealm {
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
         String username = JWTUtil.getUsername(principals.toString());
-        UserBean user = service.getUser(username);
+        UserBean user = userService.getUser(username);
         SimpleAuthorizationInfo simpleAuthorizationInfo = new SimpleAuthorizationInfo();
         simpleAuthorizationInfo.addRole(user.getRole());
         Set<String> permission = new HashSet<>(Arrays.asList(user.getPermission().split(",")));
@@ -513,7 +515,7 @@ public class MyRealm extends AuthorizingRealm {
             throw new AuthenticationException("token invalid");
         }
 
-        UserBean userBean = service.getUser(username);
+        UserBean userBean = userService.getUser(username);
         if (userBean == null) {
             throw new AuthenticationException("User didn't existed!");
         }
@@ -628,10 +630,10 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
 public class ShiroConfig {
 
     @Bean("securityManager")
-    public DefaultWebSecurityManager getManager() {
+    public DefaultWebSecurityManager getManager(MyRealm realm) {
         DefaultWebSecurityManager manager = new DefaultWebSecurityManager();
         // 使用自己的realm
-        manager.setRealm(new MyRealm());
+        manager.setRealm(realm);
 
         /*
          * 关闭shiro自带的session，详情见文档

@@ -19,10 +19,10 @@ import java.util.Map;
 public class ShiroConfig {
 
     @Bean("securityManager")
-    public DefaultWebSecurityManager getManager() {
+    public DefaultWebSecurityManager getManager(MyRealm realm) {
         DefaultWebSecurityManager manager = new DefaultWebSecurityManager();
         // 使用自己的realm
-        manager.setRealm(new MyRealm());
+        manager.setRealm(realm);
 
         /*
          * 关闭shiro自带的session，详情见文档

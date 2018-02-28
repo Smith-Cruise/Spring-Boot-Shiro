@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 @Component
-public class Service {
+public class UserService {
 
     public UserBean getUser(String username) {
         // 没有此用户直接返回null
