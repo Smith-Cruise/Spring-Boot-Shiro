@@ -4,7 +4,7 @@
 
 我也是半路出家的人，如果大家有什么好的意见或批评，请务必`issue`下。
 
-项目地址：https://github.com/Smith-Cruise/Spring-Boot-Shiro 。
+项目地址：[https://github.com/Smith-Cruise/Spring-Boot-Shiro](https://github.com/Smith-Cruise/Spring-Boot-Shiro) 。
 
 如果想要直接体验，直接`clone`项目，运行`mvn spring-boot:run`命令即可进行访问。网址规则自行看教程后面。
 
