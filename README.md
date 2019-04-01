@@ -8,7 +8,11 @@
 
 如果想要直接体验，直接`clone`项目，运行`mvn spring-boot:run`命令即可进行访问。网址规则自行看教程后面。
 
-如果想了解Spring Security可以看[Spring Boot 2.0+Srping Security+Thymeleaf的简易教程](https://github.com/Smith-Cruise/Spring-Boot-Security-Thymeleaf-Demo)
+如果想了解Spring Security可以看
+
+[Spring Boot 2.0+Srping Security+Thymeleaf的简易教程](https://github.com/Smith-Cruise/Spring-Boot-Security-Thymeleaf-Demo)
+
+[Spring Boot 2 + Spring Security 5 + JWT 的单页应用Restful解决方案](https://github.com/Smith-Cruise/Spring-Boot-Security-JWT-SPA)
 
 ## 特性
 
