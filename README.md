@@ -2,11 +2,11 @@
 
 ## 序言
 
-我也是半路出家的人，如果大家有什么好的意见或批评，请务必`issue`下。
+我也是半路出家的人，如果大家有什么好的意见或批评，请务必 `issue` 下。
 
 项目地址：[https://github.com/Smith-Cruise/Spring-Boot-Shiro](https://github.com/Smith-Cruise/Spring-Boot-Shiro) 。
 
-如果想要直接体验，直接`clone`项目，运行`mvn spring-boot:run`命令即可进行访问。网址规则自行看教程后面。
+如果想要直接体验，直接 `clone` 项目，运行 `mvn spring-boot:run` 命令即可进行访问。网址规则自行看教程后面。
 
 如果想了解Spring Security可以看
 
@@ -16,43 +16,43 @@
 
 ## 特性
 
-* 完全使用了Shiro的注解配置，保持高度的灵活性。
-* 放弃Cookie,Session,使用JWT进行鉴权，完全实现无状态鉴权。
-* JWT密钥支持过期时间。
-* 对跨域提供支持
+* 完全使用了 Shiro 的注解配置，保持高度的灵活性。
+* 放弃 Cookie ，Session ，使用JWT进行鉴权，完全实现无状态鉴权。
+* JWT 密钥支持过期时间。
+* 对跨域提供支持。
 
 ## 准备工作
 
 在开始本教程之前，请保证已经熟悉以下几点。
 
-- Spring Boot 基本语法，至少要懂得`Controller`、`RestController`、`Autowired`等这些基本注释。其实看看官方的Getting-Start教程就差不多了。
+- Spring Boot 基本语法，至少要懂得 `Controller` 、 `RestController` 、 `Autowired` 等这些基本注释。其实看看官方的 Getting-Start 教程就差不多了。
 - [JWT](https://jwt.io/) （Json Web Token）的基本概念，并且会简单操作JWT的 [JAVA SDK](https://github.com/auth0/java-jwt)。
-- Shiro的基本操作，看下官方的 [10 Minute Tutorial](http://shiro.apache.org/10-minute-tutorial.html) 即可。
-- 模拟HTTP请求工具，我使用的是PostMan。
+- Shiro 的基本操作，看下官方的 [10 Minute Tutorial](http://shiro.apache.org/10-minute-tutorial.html) 即可。
+- 模拟 HTTP 请求工具，我使用的是 PostMan。
 
-简要的说明下我们为什么要用JWT，因为我们要实现完全的前后端分离，所以不可能使用`session`，`cookie`的方式进行鉴权，所以JWT就被派上了用场，你可以通过一个加密密钥来进行前后端的鉴权。
+简要的说明下我们为什么要用 JWT ，因为我们要实现完全的前后端分离，所以不可能使用 `session`， `cookie` 的方式进行鉴权，所以 JWT 就被派上了用场，你可以通过一个加密密钥来进行前后端的鉴权。
 
 ## 程序逻辑
 
-1. 我们POST用户名与密码到`/login`进行登入，如果成功返回一个加密token，失败的话直接返回401错误。
-2. 之后用户访问每一个需要权限的网址请求必须在`header`中添加`Authorization`字段，例如`Authorization: token`，`token`为密钥。
-3. 后台会进行`token`的校验，如果有误会直接返回401。
+1. 我们 POST 用户名与密码到 `/login` 进行登入，如果成功返回一个加密 token，失败的话直接返回 401 错误。
+2. 之后用户访问每一个需要权限的网址请求必须在 `header` 中添加 `Authorization` 字段，例如 `Authorization: token` ，`token` 为密钥。
+3. 后台会进行 `token` 的校验，如果有误会直接返回 401。
 
 ## Token加密说明
 
-- 携带了`username`信息在token中。
+- 携带了 `username` 信息在 token 中。
 - 设定了过期时间。
-- 使用用户登入密码对`token`进行加密。
+- 使用用户登入密码对 `token` 进行加密。
 
 ## Token校验流程
 
-1. 获得`token`中携带的`username`信息。
+1. 获得 `token` 中携带的 `username` 信息。
 2. 进入数据库搜索这个用户，得到他的密码。
-3. 使用用户的密码来检验`token`是否正确。
+3. 使用用户的密码来检验 `token` 是否正确。
 
 ## 准备Maven文件
 
-新建一个Maven工程，添加相关的dependencies。
+新建一个 Maven 工程，添加相关的 dependencies。
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -114,20 +114,20 @@
 </project>
 ```
 
-注意指定JDK版本和编码
+注意指定JDK版本和编码。
 
 ## 构建简易的数据源
 
-为了缩减教程的代码，我使用`HashMap`本地模拟了一个数据库，结构如下
+为了缩减教程的代码，我使用 `HashMap` 本地模拟了一个数据库，结构如下：
 
 | username | password | role  | permission |
 | -------- | -------- | ----- | ---------- |
 | smith    | smith123 | user  | view       |
 | danny    | danny123 | admin | view,edit  |
 
-这是一个最简单的用户权限表，如果想更加进一步了解，自行百度RBAC。
+这是一个最简单的用户权限表，如果想更加进一步了解，自行百度 RBAC。
 
-之后再构建一个`UserService`来模拟数据库查询，并且把结果放到`UserBean`之中。
+之后再构建一个 `UserService` 来模拟数据库查询，并且把结果放到 `UserBean` 之中。
 
 ***UserService.java***
 
@@ -198,9 +198,9 @@ public class UserBean {
 }
 ```
 
-## 配置JWT
+## 配置 JWT
 
-我们写一个简单的JWT加密，校验工具，并且使用用户自己的密码充当加密密钥，这样保证了token 即使被他人截获也无法破解。并且我们在`token`中附带了`username`信息，并且设置密钥5分钟就会过期。
+我们写一个简单的 JWT 加密，校验工具，并且使用用户自己的密码充当加密密钥，这样保证了 token 即使被他人截获也无法破解。并且我们在 `token` 中附带了 `username` 信息，并且设置密钥5分钟就会过期。
 
 ```java
 public class JWTUtil {
@@ -266,7 +266,7 @@ public class JWTUtil {
 
 ***ResponseBean.java***
 
-既然想要实现restful，那我们要保证每次返回的格式都是相同的，因此我建立了一个`ResponseBean`来统一返回的格式。
+既然想要实现 restful，那我们要保证每次返回的格式都是相同的，因此我建立了一个 `ResponseBean` 来统一返回的格式。
 
 ```java
 public class ResponseBean {
@@ -314,7 +314,7 @@ public class ResponseBean {
 
 ***自定义异常***
 
-为了实现我自己能够手动抛出异常，我自己写了一个`UnauthorizedException.java`
+为了实现我自己能够手动抛出异常，我自己写了一个 `UnauthorizedException.java`
 
 ```java
 public class UnauthorizedException extends RuntimeException {
@@ -402,7 +402,7 @@ public class WebController {
 
 ***处理框架异常***
 
-之前说过restful要统一返回的格式，所以我们也要全局处理`Spring Boot`的抛出异常。利用`@RestControllerAdvice`能很好的实现。
+之前说过 restful 要统一返回的格式，所以我们也要全局处理 `Spring Boot` 的抛出异常。利用 `@RestControllerAdvice` 能很好的实现。
 
 ```java
 @RestControllerAdvice
@@ -440,13 +440,13 @@ public class ExceptionController {
 
 ```
 
-## 配置Shiro
+## 配置 Shiro
 
-大家可以先看下官方的 [Spring-Shiro](http://shiro.apache.org/spring.html) 整合教程，有个初步的了解。不过既然我们用了`Spring-Boot`，那我们肯定要争取零配置文件。
+大家可以先看下官方的 [Spring-Shiro](http://shiro.apache.org/spring.html) 整合教程，有个初步的了解。不过既然我们用了 `Spring-Boot`，那我们肯定要争取零配置文件。
 
 ***实现JWTToken***
 
-`JWTToken`差不多就是`Shiro`用户名密码的载体。因为我们是前后端分离，服务器无需保存用户状态，所以不需要`RememberMe`这类功能，我们简单的实现下`AuthenticationToken`接口即可。因为`token`自己已经包含了用户名等信息，所以这里我就弄了一个字段。如果你喜欢钻研，可以看看官方的`UsernamePasswordToken`是如何实现的。
+`JWTToken` 差不多就是 `Shiro` 用户名密码的载体。因为我们是前后端分离，服务器无需保存用户状态，所以不需要 `RememberMe` 这类功能，我们简单的实现下 `AuthenticationToken` 接口即可。因为 `token` 自己已经包含了用户名等信息，所以这里我就弄了一个字段。如果你喜欢钻研，可以看看官方的 `UsernamePasswordToken` 是如何实现的。
 
 ```java
 public class JWTToken implements AuthenticationToken {
@@ -472,7 +472,7 @@ public class JWTToken implements AuthenticationToken {
 
 ***实现Realm***
 
-`realm`的用于处理用户是否合法的这一块，需要我们自己实现。
+`realm` 的用于处理用户是否合法的这一块，需要我们自己实现。
 
 ```java
 @Service
@@ -535,13 +535,13 @@ public class MyRealm extends AuthorizingRealm {
 }
 ```
 
-在`doGetAuthenticationInfo`中用户可以自定义抛出很多异常，详情见文档。
+在 `doGetAuthenticationInfo()` 中用户可以自定义抛出很多异常，详情见文档。
 
-***重写Filter***
+***重写 Filter***
 
-所有的请求都会先经过`Filter`，所以我们继承官方的`BasicHttpAuthenticationFilter`，并且重写鉴权的方法。
+所有的请求都会先经过 `Filter`，所以我们继承官方的 `BasicHttpAuthenticationFilter` ，并且重写鉴权的方法。
 
-代码的执行流程`preHandle`->`isAccessAllowed`->`isLoginAttempt`->`executeLogin`
+代码的执行流程 `preHandle` -> `isAccessAllowed` -> `isLoginAttempt` -> `executeLogin` 。
 
 ```java
 public class JWTFilter extends BasicHttpAuthenticationFilter {
@@ -627,7 +627,7 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
 }
 ```
 
-`getSubject(request, response).login(token);`这一步就是提交给了`realm`进行处理
+`getSubject(request, response).login(token);` 这一步就是提交给了 `realm` 进行处理。
 
 ***配置Shiro***
 
@@ -706,11 +706,11 @@ public class ShiroConfig {
 }
 ```
 
-里面URL规则自己参考文档即可http://shiro.apache.org/web.html 。
+里面 URL 规则自己参考文档即可 http://shiro.apache.org/web.html 。
 
 ## 总结
 
 我就说下代码还有哪些可以进步的地方吧
 
-- 没有实现Shiro的`Cache`功能。
-- Shiro中鉴权失败时不能够直接返回401信息，而是通过跳转到`/401`地址实现。
+- 没有实现 Shiro 的 `Cache` 功能。
+- Shiro 中鉴权失败时不能够直接返回 401 信息，而是通过跳转到 `/401` 地址实现。
