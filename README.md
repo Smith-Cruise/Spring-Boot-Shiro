@@ -86,7 +86,7 @@
 
     <build>
         <plugins>
-        	<!-- Srping Boot 打包工具 -->
+        		<!-- Srping Boot 打包工具 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -129,7 +129,7 @@
 
 之后再构建一个 `UserService` 来模拟数据库查询，并且把结果放到 `UserBean` 之中。
 
-***UserService.java***
+**UserService.java**
 
 ```java
 @Component
@@ -152,7 +152,7 @@ public class UserService {
 }
 ```
 
-***UserBean.java***
+**UserBean.java**
 
 ```java
 public class UserBean {
@@ -264,7 +264,7 @@ public class JWTUtil {
 
 ## 构建URL
 
-***ResponseBean.java***
+**ResponseBean.java**
 
 既然想要实现 restful，那我们要保证每次返回的格式都是相同的，因此我建立了一个 `ResponseBean` 来统一返回的格式。
 
@@ -312,7 +312,7 @@ public class ResponseBean {
 }
 ```
 
-***自定义异常***
+**自定义异常**
 
 为了实现我自己能够手动抛出异常，我自己写了一个 `UnauthorizedException.java`
 
@@ -328,7 +328,7 @@ public class UnauthorizedException extends RuntimeException {
 }
 ```
 
-***URL结构***
+**URL结构**
 
 | URL                 | 作用                      |
 | ------------------- | ----------------------- |
@@ -338,7 +338,7 @@ public class UnauthorizedException extends RuntimeException {
 | /require_role       | admin的角色用户才可以登入         |
 | /require_permission | 拥有view和edit权限的用户才可以访问   |
 
-***Controller***
+**Controller**
 
 ```java
 @RestController
@@ -400,7 +400,7 @@ public class WebController {
 }
 ```
 
-***处理框架异常***
+**处理框架异常**
 
 之前说过 restful 要统一返回的格式，所以我们也要全局处理 `Spring Boot` 的抛出异常。利用 `@RestControllerAdvice` 能很好的实现。
 
@@ -444,7 +444,7 @@ public class ExceptionController {
 
 大家可以先看下官方的 [Spring-Shiro](http://shiro.apache.org/spring.html) 整合教程，有个初步的了解。不过既然我们用了 `Spring-Boot`，那我们肯定要争取零配置文件。
 
-***实现JWTToken***
+**实现JWTToken**
 
 `JWTToken` 差不多就是 `Shiro` 用户名密码的载体。因为我们是前后端分离，服务器无需保存用户状态，所以不需要 `RememberMe` 这类功能，我们简单的实现下 `AuthenticationToken` 接口即可。因为 `token` 自己已经包含了用户名等信息，所以这里我就弄了一个字段。如果你喜欢钻研，可以看看官方的 `UsernamePasswordToken` 是如何实现的。
 
@@ -470,7 +470,7 @@ public class JWTToken implements AuthenticationToken {
 }
 ```
 
-***实现Realm***
+**实现Realm**
 
 `realm` 的用于处理用户是否合法的这一块，需要我们自己实现。
 
@@ -629,7 +629,7 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
 
 `getSubject(request, response).login(token);` 这一步就是提交给了 `realm` 进行处理。
 
-***配置Shiro***
+**配置Shiro**
 
 ```java
 @Configuration
