@@ -1,18 +1,20 @@
-# Shiro+JWT+Spring Boot Restful简易教程
+# Shiro + JWT + Spring Boot Restful 简易教程
+
+GitHub 项目地址：[https://github.com/Smith-Cruise/Spring-Boot-Shiro](https://github.com/Smith-Cruise/Spring-Boot-Shiro) 。
+
+原文地址：[https://www.inlighting.org/archives/spring-boot-shiro-jwt.html](https://www.inlighting.org/archives/spring-boot-shiro-jwt.html)。
 
 ## 序言
 
 我也是半路出家的人，如果大家有什么好的意见或批评，请务必 `issue` 下。
 
-项目地址：[https://github.com/Smith-Cruise/Spring-Boot-Shiro](https://github.com/Smith-Cruise/Spring-Boot-Shiro) 。
-
 如果想要直接体验，直接 `clone` 项目，运行 `mvn spring-boot:run` 命令即可进行访问。网址规则自行看教程后面。
 
-如果想了解Spring Security可以看
+如果想了解 Spring Security 可以看
 
 [Spring Boot 2.0+Srping Security+Thymeleaf的简易教程](https://github.com/Smith-Cruise/Spring-Boot-Security-Thymeleaf-Demo)
 
-[Spring Boot 2 + Spring Security 5 + JWT 的单页应用Restful解决方案](https://github.com/Smith-Cruise/Spring-Boot-Security-JWT-SPA)
+[Spring Boot 2 + Spring Security 5 + JWT 的单页应用Restful解决方案](https://github.com/Smith-Cruise/Spring-Boot-Security-JWT-SPA) **（推荐）**
 
 ## 特性
 
