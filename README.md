@@ -2,8 +2,6 @@
 
 GitHub 项目地址：[https://github.com/Smith-Cruise/Spring-Boot-Shiro](https://github.com/Smith-Cruise/Spring-Boot-Shiro) 。
 
-原文地址：[https://www.inlighting.org/2019/spring-boot-shiro-jwt.html](https://www.inlighting.org/2019/spring-boot-shiro-jwt.html)。
-
 ## 序言
 
 我也是半路出家的人，如果大家有什么好的意见或批评，请务必 `issue` 下。
